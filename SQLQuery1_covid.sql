@@ -29,7 +29,7 @@ From covid..covid_deaths$
 Group by location,population
 order by deathperc desc;
 
--- Showing countries with highest death count per population
+-- Showing countries with highest death count per pop
 select location, MAX(total_deaths) as highest 
 from covid..covid_deaths$
 Group by location
@@ -45,7 +45,8 @@ order by totalcases desc;
 
 --Global numbers
 
---want to see the cases of all countries on a specific date
+--want to see the cases of all 
+--countries on a specific date
 
 select date,SUM(CONVERT(DECIMAL(18,2),total_cases)) as sum_of_cases_on_this_date,
 SUM(CONVERT(DECIMAL(18,2) ,total_deaths ))/SUM(CONVERT(DECIMAL(18,2) ,total_cases ))*100  as death_percentage    
@@ -63,7 +64,6 @@ join covid..covid_deaths$ vac
 on dea.location=vac.location and dea.date=vac.date;
 
 --total population vs vaccination  (CTE)
---Creating a common table expression named PopvsVac
 With PopvsVac 
 (continent, location,date,population,new_vaccinations,sum_new)
 as
@@ -128,3 +128,41 @@ join covid..covid_deaths$ dea
 on dea.location=vac.location and dea.date=vac.date
 where dea.continent is not null
 
+
+--Tableau queries for building a dashboard
+--1 Table displaying total cases, total deaths and death percentage
+select sum(new_cases) as total_cases,
+SUM(cast(new_deaths as int)) as total_deaths,
+sum(cast(new_deaths as int))/SUM(New_Cases)*100 
+as DeathPercentage
+from covid..covid_deaths$
+where continent is not null
+order by 1,2 
+
+--2 To display total deaths per continent
+Select location, SUM(cast(new_deaths as int)) as
+TotalDeathCount from covid..covid_deaths$
+where continent is null
+and location not in 
+('World','European Union','International','High income',
+'Upper middle income','Low income','Lower middle income')
+group by location 
+order by TotalDeathCount desc
+
+--3 To display percent population affected per country
+select Location,Population, MAX(total_cases) as 
+HighestInfectionCount, Max((total_cases/population))*100
+as PercentPopulationInfected
+From covid..covid_deaths$
+group by Location,Population 
+order by PercentPopulationInfected desc
+
+--4 To display percent population affected in a time series graph.
+select Location, Population, date, Max(total_cases)
+as HighestInfectionCount,
+Max((total_cases/population))*100 
+as PercentPopulationInfected
+From covid..covid_deaths$
+group by Location,population,date
+order by 
+PercentPopulationInfected desc
